@@ -1,57 +1,72 @@
 const prompt = require("readline-sync");
 
 
+function prettyObject(object) {
+  for (let key in object) {
+    console.log(key + ": " +object[key].toString());
+  }
+}
+
+// function checkOptions(answer, options) {
+//   if (!options.includes(answer)) {
+//     console.log("That answer is not an option!");
+//   }
+// }
 
 /********************************** 
 LISTING THE GUESTS: EXAMPLE LIST
 ************************************/
 
-let gosti = [
-  ["mama","bacika","norika","milan","uros","djordjija","marko","marko1","mumika","lajco"],
-  ["kika"],
-  ["tata","daniel","deda","strikan","vesna","ksenija","pancic","abi","goca","alex","julija","elena","zeljko","nikola","nemanja",
-    "ujnica","lea","muz","beba","antonija","toni"],
-  ['petra','matija',"nunika","zoki","filip","josipa","iva","vladan","teta","zveki","dunja","teo"],
-  ["iris","nemanja","bilja","dalibor","jasmina","nikola","badza","bojana","sneza","dordje","olja","olja1","sven","tena","danko","danko1","mile","luka","dino","jovana"],
-  ["dario-mama",'josip',"darko pokornik","maja pokornik","cerka","petka dete","nika","miki","danica","beba"]
-]
-function importingList(list) {
-
-  guests = {};
-  list.forEach(function(item,index) {
-    guests[index] = item;
-  });
-  return guests;
-
+function exampleList() {
+  return guestList = [
+    ["mama","bacika","norika","milan","uros","djordjija","marko","marko1","mumika","lajco"],
+    ["kika"],
+    ["tata","daniel","deda","strikan","vesna","ksenija","pancic","abi","goca","alex","julija","elena","zeljko","nikola","nemanja",
+      "ujnica","lea","muz","beba","antonija","toni"],
+    ['petra','matija',"nunika","zoki","filip","josipa","iva","vladan","teta","zveki","dunja","teo"],
+    ["iris","nemanja","bilja","dalibor","jasmina","nikola","badza","bojana","sneza","dordje","olja","olja1","sven","tena","danko","danko1","mile","luka","dino","jovana"],
+    ["dariova mama",'josip',"darko pokornik","maja pokornik","cerka","petka dete","nika","miki","danica","beba"]
+  ]
 }
-
-guests = importingList(gosti);
-console.log(guests);
-
-
 
 
 /*******************************
 LISTING THE GUESTS MANUALLY
 **********************************/
 
+function creatingGuestListManually() {
 
-// let guests = {};
-// let totalGroups = 0;
-// let moreGroups = 1;
+  let guestList = [];
+  let moreGroups = 1;
 
-// while (moreGroups==1) {
+  while (moreGroups==1) {
 
-//   totalGroups++;
-//   guests[totalGroups] = prompt.question("\nWho is coming to your wedding?\n").split(",");
-//   moreGroups = prompt.question("\nDo you want to add more groups? 1 || 0 \n");
+    newGroup = prompt.question("\nWho is coming to your wedding?\nINSTRUCTIONS: enter names separated with comma, exampe: guest1,guest2,guest3").split(",");
+    guestList.push(newGroup);
+    moreGroups = prompt.question("\nDo you want to add more groups? 1 || 0 \n");
 
-// }
-// console.log("Your guests are:\n");
-// console.log(guests);
-
+  }
+  return guestList;
+}
 
 
+/*********************************** 
+LETTING THE USER CHOOSE IF THEY WANT TO
+1. ENTER THE GUESTLIST MANUALLY
+2. TEST THE APP WITH PREMADE GUESTLIST  
+*************************************/
+
+let guestList;
+let manually = prompt.questionInt("Do you want to enter your own guestlist? If you just want to test the app using premade guestlist, enter 0.\n");
+if(manually == 1) {
+  guestList = creatingGuestListManually();
+} else {
+  guestList = exampleList();
+}
+
+console.log(guestList);
+console.log("\nGuestlist:");
+console.log(prettyObject(guestList));
 
 
 /********************** 
@@ -63,18 +78,30 @@ const tableChairs = prompt.questionInt("How many chairs can be at each table?\n"
 
 
 /* TASK: check if some groups have more guests than chairs and break them into smaller groups */
-function reducingBigGroups(i) {
-  n = guests[i].length;
-  if (n > tableChairs) {
-    console.log(`\n${guests[i]} --> This group has ${n - tableChairs} members, 
-      we have to break them into groups smaller than ${tableChairs}.`);
-    separating = prompt.question(`Pick from ${n - tableChairs} to ${tableChairs} guests to be separated.`).split(",");
-    guests[i] = guests[i].filter(separated => !separating.includes(separated)); // filtering out the non-chosen people, and updating the object guest
-    guests[Object.keys(guests).length + 1] = separating;
-    console.log(guests);
+function reducingBigGroups(guestList) {
+
+  let guests = {};
+  i = 1;
+  while (guestList.length > 0) {
+    n = guestList[0].length;
+    if (n <= tableChairs) {
+      guests[`GROUP ${i++}`] = guestList[0];
+      guestList.shift();
+    } else {
+      console.log(`\n${guestList[0]} --> This group has ${n} members, we have to break them into groups smaller than ${tableChairs}.`);
+      separating = prompt.question(`Select guests to be separated from this group.`).split(",");
+      guestList[0] = guestList[0].filter(separated => !separating.includes(separated));
+      if (separating.length <= tableChairs) {
+        guests[`GROUP ${i++}`] = separating;
+      } else {
+        guestList.push(separating);
+      }      
+    }
   }
+  return guests;
 }
-Object.keys(guests).forEach(i => reducingBigGroups(i));
+
+let guests = reducingBigGroups(guestList);
 
 
 
@@ -89,23 +116,24 @@ while(numOfGroupsWithoutTable > 0) {
 
   if (n === tableChairs) {
   console.log(`\n${guests[i]} --> This group has exactly ${tableChairs} guests so they will have their own table together.`);
-  tableGroups[`TABLE${tableNumber++}`] = guests[i];
+  tableGroups[`TABLE ${tableNumber++}`] = guests[i];
   delete guests[i];
   }
-  else if (!choices(guests, tableChairs - n)) {
+  else if (!Object.keys(choices(guests, tableChairs - n)).length) {
     console.log(`\n${guests[i]} --> This group has ${n} guests and since we don't have any groups left with max 
-      ${tableChairs - n} people, so they will have their own table.`);
-    tableGroups[`TABLE${tableNumber++}`] = guests[i];
+      ${tableChairs - n} people, they will have their own table.`);
+    tableGroups[`TABLE ${tableNumber++}`] = guests[i];
     delete guests[i];
   } else {
-    pick = prompt.question(`${guests[i]} --> This group has ${n} guests. Pick a group with maximum ${ tableChairs - n} 
-      people to sit with this group.
+    console.log("\nYour choices are:");
+    console.log(prettyObject(choices(guests, tableChairs - n)));
+    pick = prompt.questionInt(`${guests[i]} --> This group has ${n} guests. Choose a group from above listed choices to sit with this group and enter that choice' number.
       (If you don't want to add anyone else, enter 0!)\n`);
     if(pick!=0) {
-      guests[i] = guests[i].concat(guests[pick]);
-      delete guests[pick];
+      guests[i] = guests[i].concat(guests[`GROUP ${pick}`]);
+      delete guests[`GROUP ${pick}`];
     } else {
-      tableGroups[`TABLE${tableNumber++}`] = guests[i];
+      tableGroups[`TABLE ${tableNumber++}`] = guests[i];
       delete guests[i];
     } 
     
@@ -120,17 +148,22 @@ function choices(guests, size) {
 
   let choices = {};
   for (let key in guests) {
+    j = 1;
    if (guests[key].length <= size && key != i) {
-    choices[guests[key].length] = guests[key];
+    choices[key] = guests[key];
    }
   }
-  return Object.keys(choices).length;
+  return choices;
 
 }
-
 
 
 /****************************
 DISPLAYING THE ASIGNED TABLES
 ***************************/
-console.log(tableGroups);
+let totalGuests = 0;
+for (let key in tableGroups) {
+  totalGuests = totalGuests + tableGroups[key].length;
+}
+console.log(`Great job, now we have asigned tables! \nThe total number of tables is ${Object.keys(tableGroups).length}. \nThe total number of guests is ${totalGuests}.`)
+console.log(prettyObject(tableGroups));
